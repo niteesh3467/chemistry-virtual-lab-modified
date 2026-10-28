@@ -45,7 +45,7 @@ import os
 # ============================================================
 
 st.set_page_config(
-    page_title="Cheminformatics Virtual Laboratory",
+    page_title="Molecule Explorer| Virtual Chemistry Lab",
     page_icon="🧪",
     layout="wide"
 )
@@ -55,24 +55,80 @@ st.set_page_config(
 # CUSTOM CSS
 # ============================================================
 
-st.markdown("""
+ st.markdown("""
 <style>
-
 .main-title {
     text-align: center;
     font-size: 40px;
     font-weight: bold;
+    color: #0F766E;
 }
-
 .section-title {
     font-size: 25px;
     font-weight: bold;
+    color: #155E75;
 }
-
+[data-testid="stMetric"] {
+    background: #F0FDFA;
+    border: 1px solid #99F6E4;
+    padding: 14px;
+    border-radius: 12px;
+}
 </style>
 """, unsafe_allow_html=True)
+st.markdown("""
+<div class="main-title">
+    🧪 Molecule Explorer
+</div>
+<p style="text-align:center; color:#64748B;">
+    An interactive virtual laboratory for exploring
+    2D and 3D chemical structures.
+</p>
+""", unsafe_allow_html=True)
 
+st.divider()
 
+st.subheader("Welcome to the Virtual Chemistry Lab")
+
+st.write(
+    "Explore molecular structures, study chemical bonding, "
+    "and understand the properties of different molecules. "
+    "Select a molecule to begin your investigation."
+)
+
+with st.expander("📘 Experiment Guide — View Instructions"):
+    st.markdown("""
+    **Aim**
+
+    To visualize molecular structures and study their
+    chemical and physical properties using cheminformatics.
+
+    **Theory**
+
+    A molecule consists of atoms connected by chemical bonds.
+    A 2D structure represents connectivity, while a 3D model
+    helps visualize spatial arrangement.
+
+    **Procedure**
+
+    1. Select an example molecule or enter a valid SMILES string.
+    2. Examine its 2D chemical structure.
+    3. Explore its 3D model using the available display styles.
+    4. Record its molecular formula, molecular weight,
+       and bonding information.
+    5. Compare the observations for different molecules.
+
+    **Observation**
+
+    Different molecules have different structures,
+    molecular formulas, bonding patterns, and properties.
+
+    **Conclusion**
+
+    Molecular visualization and property calculations help
+    us understand the relationship between molecular
+    structure and chemical behavior.
+    """)
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
@@ -2509,3 +2565,91 @@ st.caption(
     "🧪 Cheminformatics Virtual Laboratory | "
     "Developed using Python, Streamlit and RDKit"
 )
+# ============================================================
+# NEW FEATURE: MOLECULE SUMMARY AND ATOM INSPECTOR
+# ============================================================
+
+st.divider()
+st.header("🔬 Molecule Explorer — Additional Analysis")
+
+current_smiles = st.session_state.get("active_smiles", "CCO")
+active_mol = get_molecule(current_smiles)
+
+if active_mol is not None:
+
+    props = calculate_properties(active_mol)
+
+    st.subheader("Molecular Information")
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Molecular Formula",
+        props["Molecular Formula"]
+    )
+
+    col2.metric(
+        "Molecular Weight",
+        f'{props["Molecular Weight"]} g/mol'
+    )
+
+    col3.metric(
+        "Heavy Atoms",
+        props["Heavy Atoms"]
+    )
+
+    col4, col5, col6 = st.columns(3)
+
+    col4.metric("LogP", props["LogP"])
+    col5.metric("TPSA", props["TPSA"])
+    col6.metric("Ring Count", props["Ring Count"])
+
+    st.caption(
+        "These values are calculated from the currently "
+        "selected SMILES structure using RDKit."
+    )
+
+    st.subheader("⚛️ Atom Inspector")
+
+    atom_options = [
+        f"Atom {i + 1}: {atom.GetSymbol()}"
+        for i, atom in enumerate(active_mol.GetAtoms())
+    ]
+
+    selected_atom = st.selectbox(
+        "Select an atom to inspect",
+        range(active_mol.GetNumAtoms()),
+        format_func=lambda i: atom_options[i],
+        key="atom_inspector_selection"
+    )
+
+    atom = active_mol.GetAtomWithIdx(selected_atom)
+
+    st.write(f"**Element:** {atom.GetSymbol()}")
+    st.write(f"**Atomic number:** {atom.GetAtomicNum()}")
+    st.write(f"**Atom index:** {selected_atom + 1}")
+    st.write(f"**Number of neighboring atoms:** {len(atom.GetNeighbors())}")
+    st.write(f"**Formal charge:** {atom.GetFormalCharge()}")
+    st.write(f"**Hybridization:** {atom.GetHybridization()}")
+
+    neighbors = [
+        f"{neighbor.GetSymbol()} (atom {neighbor.GetIdx() + 1})"
+        for neighbor in atom.GetNeighbors()
+    ]
+
+    st.write(
+        "**Connected atoms:**",
+        ", ".join(neighbors) if neighbors else "None"
+    )
+
+    st.info(
+        "The atom inspector reports structural information "
+        "for the selected atom. Atom indices start at 1 "
+        "in this display."
+    )
+
+else:
+    st.warning(
+        "Enter or select a valid molecule in the existing "
+        "molecule input section to view its properties."
+    )
