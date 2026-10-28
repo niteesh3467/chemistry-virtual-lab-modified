@@ -55,7 +55,7 @@ st.set_page_config(
 # CUSTOM CSS
 # ============================================================
 
- st.markdown("""
+st.markdown("""
 <style>
 .main-title {
     text-align: center;
